@@ -178,9 +178,6 @@ class ExactInference(InferenceModule):
                 if emissionModel[trueDistance] > 0:
                     allPossible[p] = emissionModel[trueDistance]*self.beliefs[p]
 
-            
-
-
         "*** END YOUR CODE HERE ***"
 
         allPossible.normalize()
@@ -292,8 +289,15 @@ class ParticleFilter(InferenceModule):
         weight with each position) is incorrect and may produce errors.
         """
         "*** YOUR CODE HERE ***"
+
         numberOfParticles = self.numParticles
         print numberOfParticles
+
+        self.particleList = []
+
+        for i in range(0,numberOfParticles):
+            self.particleList.append(self.legalPositions[i%len(self.legalPositions)])
+
 
     def observe(self, observation, gameState):
         """
@@ -325,8 +329,19 @@ class ParticleFilter(InferenceModule):
         noisyDistance = observation
         emissionModel = busters.getObservationDistribution(noisyDistance)
         pacmanPosition = gameState.getPacmanPosition()
+
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        weights = []
+        if noisyDistance is None:
+            self.particleList = []
+            for i in range(0,self.numParticles):
+                self.particleList.append(self.getJailPosition())
+        else:
+            for particle in self.particleList:
+                particleDist = util.manhattanDistance(pacmanPosition, particle)
+                weights.append(emissionModel[particleDist])
+            print("WEIGHTS:", weights)
+            self.particleList = util.nSample(weights, self.particleList, self.numParticles)
 
     def elapseTime(self, gameState):
         """
@@ -353,7 +368,12 @@ class ParticleFilter(InferenceModule):
         Counter object)
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        self.beliefs = util.Counter()
+        for particle in self.particleList:
+            #print self.beliefs[particle]
+            self.beliefs[particle] +=1
+        self.beliefs.normalize()
+        return self.beliefs
 
 class MarginalInference(InferenceModule):
     """
